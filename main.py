@@ -17,7 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.datastructures import FormData
 from starlette.formparsers import MultiPartParser
-from typing import Dict
+from typing import Dict , Optional
 import cloudinary.api
 import pytz
 
@@ -369,20 +369,33 @@ async def uploadBase64ImageToCloudinary(payload: UploadPayload):
     dbResponse = await collection.insert_one(item)
     return {"id": str(dbResponse.inserted_id)}
      
-
+     
 @app.post("/api/get/data")
-async def fetch_data(email: str = Form(...)):
+async def fetch_data(
+    email: str = Form(...),
+    page: Optional[int] = Form(1),
+    limit: Optional[int] = Form(20),
+):
     collection = db["asset"]
     collection_ = db["user"]
 
-    documents = await collection.find({"email": email}).to_list(length=None)
+    # Pagination calculation
+    skip = (page - 1) * limit
+
+    # Paginated documents
+    cursor = collection.find({"email": email}).sort("created_at", -1).skip(skip).limit(limit)
+    documents = await cursor.to_list(length=limit)
+
+    # User info (no pagination)
     user_documents = await collection_.find({"email": email}).to_list(length=1)
-    
+
+    # Format documents
     for doc in documents:
         doc["_id"] = str(doc["_id"])
         if "created_at" in doc:
             doc["created_at"] = convert_to_local_timezone(doc["created_at"])
 
+    # Format user
     user = None
     if user_documents:
         user = user_documents[0]
@@ -390,7 +403,6 @@ async def fetch_data(email: str = Form(...)):
         remove_key(user, "password")
 
     return {"data": documents, "user_detail": user}
-
 
 
 @app.post("/upload")
