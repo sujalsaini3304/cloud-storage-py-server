@@ -19,9 +19,23 @@ from starlette.datastructures import FormData
 from starlette.formparsers import MultiPartParser
 from typing import Dict
 import cloudinary.api
+import pytz
 
 app = FastAPI()
 load_dotenv()
+tz = pytz.timezone("UTC")
+DESIRED_TIMEZONE = pytz.timezone("Asia/Kolkata")  
+
+
+def convert_to_local_timezone(utc_time_str: str, from_format="%Y-%m-%d %H:%M:%S") -> str:
+    try:
+        utc_time = datetime.strptime(utc_time_str, from_format)
+        utc_time = pytz.utc.localize(utc_time)
+        local_time = utc_time.astimezone(DESIRED_TIMEZONE)
+        return local_time.strftime(from_format)
+    except Exception as e:
+        return utc_time_str  # fallback to original if parsing fails
+
 
 
 #Email config
@@ -164,6 +178,7 @@ async def  update_password(payload : UserInfo ):
         {"email": payload.email},
         {"$set": {"password": hashed_password.decode('utf-8')}}
     )
+    
     if result.modified_count > 0:
         return {
             "status" : "Success",
@@ -350,7 +365,7 @@ async def uploadBase64ImageToCloudinary(payload: UploadPayload):
     image_bytes = base64.b64decode(payload.image_base64)
     image_io = io.BytesIO(image_bytes)
     result = cloudinary.uploader.upload(image_io , resource_type="auto" , folder= f"CloudStorageProject/User/Data/{payload.email}/")
-    item = {"email" : payload.email,"filename": payload.filename, "url": result.get("secure_url") , "public_id": result.get("public_id") ,  "resource_type": result.get("resource_type") , "created_at" : datetime.now().strftime("%Y-%m-%d %H:%M:%S") }
+    item = {"email" : payload.email,"filename": payload.filename, "url": result.get("secure_url") , "public_id": result.get("public_id") ,  "resource_type": result.get("resource_type") , "created_at" : datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S") }
     dbResponse = await collection.insert_one(item)
     return {"id": str(dbResponse.inserted_id)}
      
@@ -365,6 +380,8 @@ async def fetch_data(email: str = Form(...)):
     
     for doc in documents:
         doc["_id"] = str(doc["_id"])
+        if "created_at" in doc:
+            doc["created_at"] = convert_to_local_timezone(doc["created_at"])
 
     user = None
     if user_documents:

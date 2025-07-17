@@ -6,3 +6,4 @@ python-dotenv
 motor
 fastapi_mail
 bcrypt
+pytz
