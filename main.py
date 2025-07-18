@@ -402,7 +402,7 @@ async def fetch_data(
         user["_id"] = str(user["_id"])
         remove_key(user, "password")
 
-    return {"data": documents, "user_detail": user}
+    return {"data": documents, "user_detail": user , "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
 
 
 @app.post("/upload")
