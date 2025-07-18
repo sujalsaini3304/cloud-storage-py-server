@@ -71,7 +71,7 @@ db = client["cloudStorageProject"]
 
 @app.get("/")
 def root():
-    return {"message" : "Server is running"}
+    return {"message" : "Server is running" ,  "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
 
 @app.get("/ping")
 def ping():
@@ -402,7 +402,7 @@ async def fetch_data(
         user["_id"] = str(user["_id"])
         remove_key(user, "password")
 
-    return {"data": documents, "user_detail": user , "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
+    return {"data": documents, "user_detail": user }
 
 
 @app.post("/upload")
