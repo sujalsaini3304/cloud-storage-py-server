@@ -71,7 +71,12 @@ db = client["cloudStorageProject"]
 
 @app.get("/")
 def root():
-    return {"message" : "Server is running" ,  "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
+    return {"message" : "Server is running"}
+
+@app.get("/api/get/developer/detail")
+def get_developer_detail():
+    return {"message" : "Server is running" , "server_health_status" : "ok" , "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
+
 
 @app.get("/ping")
 def ping():
