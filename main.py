@@ -77,7 +77,6 @@ def root():
 def get_developer_detail():
     return {"message" : "Server is running" , "server_health_status" : "ok" , "developer_detail" : {"name" : "Sujal Kumar Saini" , "email" : "sujalsaini3304@gmail.com" }}
 
-
 @app.get("/ping")
 def ping():
     return {"status" : "ok"}
@@ -272,7 +271,7 @@ async def create_user(payload: User):
         "email": payload.email,
         "password": hashed_password.decode('utf-8'),  # Store as string
         "is_email_verified": True,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "created_at": datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
     }
 
     db_response = await collection.insert_one(item)
@@ -405,8 +404,11 @@ async def fetch_data(
     if user_documents:
         user = user_documents[0]
         user["_id"] = str(user["_id"])
-        remove_key(user, "password")
+        if "created_at" in user:
+            user["created_at"] = convert_to_local_timezone(user["created_at"])
 
+        remove_key(user, "password")
+        
     return {"data": documents, "user_detail": user }
 
 
