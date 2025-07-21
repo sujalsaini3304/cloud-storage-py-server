@@ -528,7 +528,7 @@ async def delete_images(items: List[ItemToDelete] = Body(...)):
             # 🧼 2. Delete from MongoDB by _id
             delete_result = await collection.delete_one({"_id": ObjectId(item.mongo_id)})
             if delete_result.deleted_count:
-                deleted_from_db.append(item._id)
+                deleted_from_db.append(item.mongo_id)
 
         except Exception as e:
             print(f"Error deleting {item.public_id}: {e}")
