@@ -363,6 +363,7 @@ class UploadPayload(BaseModel):
     filename: str
     image_base64: str
 
+# Stop using for now 
 @app.post("/base64/image/upload")
 async def uploadBase64ImageToCloudinary(payload: UploadPayload):
     collection = db["asset"]
@@ -373,7 +374,7 @@ async def uploadBase64ImageToCloudinary(payload: UploadPayload):
     dbResponse = await collection.insert_one(item)
     return {"id": str(dbResponse.inserted_id)}
      
-     
+# In use     
 @app.post("/api/get/data")
 async def fetch_data(
     email: str = Form(...),
@@ -437,6 +438,7 @@ def delete_file_from_cloudinary(public_id: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# In use
 @app.post("/multiple/upload")
 async def upload_multiple_files(
     email: str = Form(...),
@@ -444,6 +446,7 @@ async def upload_multiple_files(
 ):
     collection = db["asset"]
     uploaded_files = []
+    db_items = []
 
     for file in files:
         contents = await file.read()
@@ -452,14 +455,31 @@ async def upload_multiple_files(
             resource_type="auto",
             folder=f"CloudStorageProject/User/Data/{email}/"
         )
-        uploaded_files.append({
+
+        uploaded_file_info = {
             "filename": file.filename,
             "url": result.get("secure_url"),
             "public_id": result.get("public_id"),
-            "resource_type": result.get("resource_type")
+            "resource_type": result.get("resource_type"),
+        }
+
+        uploaded_files.append(uploaded_file_info)
+
+        db_items.append({
+            "email": email,
+            **uploaded_file_info,
+            "created_at": datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S"),
         })
 
-    return {"uploaded_files": uploaded_files}
+    inserted_ids = []
+    if db_items:
+        result = await collection.insert_many(db_items)
+        inserted_ids = [str(_id) for _id in result.inserted_ids]  # Convert ObjectId to str
+
+    return {
+        "uploaded_files": uploaded_files,
+        "inserted_ids": inserted_ids
+    }
 
 
 @app.delete("/multiple/delete")
